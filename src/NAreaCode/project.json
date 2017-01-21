@@ -1,0 +1,42 @@
+{
+  "version": "1.0.0",
+  "buildOptions": {
+    "emitEntryPoint": true,
+    "copyToOutput": {
+      "include": [
+        "appsettings.json",
+        "appsettings.*.json",
+        "data"
+      ]
+    }
+  },
+
+  "dependencies": {
+    "dotNetRDF": "1.0.13-pre6",
+    "Microsoft.Extensions.Configuration": "1.1.0",
+    "Microsoft.Extensions.Configuration.Json": "1.1.0",
+    "Microsoft.Extensions.PlatformAbstractions": "1.1.0",
+    "Microsoft.NETCore.App": {
+      "version": "1.1.0",
+      "type": "platform"
+    },
+    "System.Runtime.InteropServices.RuntimeInformation": "4.3.0"
+  },
+
+  "frameworks": {
+    "netcoreapp1.1": {
+      "imports": "dnxcore50",
+      "dependencies": {
+        "System.Text.Encoding.CodePages": "4.3.0" 
+      }
+    }
+  },
+
+  "publishOptions": {
+    "include": [
+      "data",
+      "appsettings.json",
+      "appsettings.*.json"
+    ]
+  }
+}
