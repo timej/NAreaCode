@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using VDS.RDF;
 using VDS.RDF.Query;
 
@@ -256,7 +257,32 @@ namespace NAreaCode.Models
 
         private void GetAreaData(StandardAreaCode areaCode, DateTime issued)
         {
-            string durationAreaCode = areaCode.Id + "-" + issued.ToString("yyyyMMdd");
+            string durationAreaCode;
+            if (areaCode.Id / 1000 == 47 && issued < new DateTime(1972, 5, 15))
+            {
+                if (areaCode.Id == 47307)
+                {
+                    areaCode.名称 = "上本部村";
+                    areaCode.ふりがな = "かみもとぶそん";
+                    areaCode.英語名 = "Kamimotobu-son";
+                    areaCode.郡 = "47300";
+                    return;
+                }
+                else if (areaCode.Id == 47342)
+                {
+                    areaCode.名称 = "糸満町";
+                    areaCode.ふりがな = "いとまんちょう";
+                    areaCode.英語名 = "Itoman-cho";
+                    areaCode.郡 = "47340";
+                    return;
+                }
+                else
+                {
+                    durationAreaCode = areaCode.Id + "-19720515";
+                }
+            }
+            else
+                durationAreaCode = areaCode.Id + "-" + issued.ToString("yyyyMMdd");
             //政令市の区に編入しているケース
             if (durationAreaCode == "26100-20050401") //771京北町
                 durationAreaCode = "26100-19700401";
@@ -266,6 +292,8 @@ namespace NAreaCode.Models
                 durationAreaCode = "22100-20050401";
             else if (durationAreaCode == "22100-20081101") //5093由比町
                 durationAreaCode = "22100-20050401";
+            else if (durationAreaCode == "40130-19750301") //218早良町
+                durationAreaCode = "40130-19720401";
 
             var areaCode0 = StandardAreaLodList0?.FirstOrDefault(x => x.Id == areaCode.Id && x.施行年月日 == issued);
             if (areaCode0 != null)
@@ -562,6 +590,7 @@ namespace NAreaCode.Models
             var event2 = ChangeEventList0.First(x => x.Id == 992);
             event2.Original = new List<string> {"47344-19900301", "47343-19970401" };
 
+
             foreach (var ev0 in ChangeEventList0)
             {
                 var ev = new ChangeEvent
@@ -684,7 +713,9 @@ namespace NAreaCode.Models
                         else
                             ev.変更前地域 = ToStandardCode(ev0.Original);
                         ev.変更後地域 = ToStandardCode(ev0.Resulting);
-                        ChangeEventList.Add(ev);
+                        //沖縄県を1970年4月1日からにするため復帰のデータを削除
+                        if (ev.Id != 1)
+                            ChangeEventList.Add(ev);
                         break;
 
                     case "shiftToAnotherKindOfCity":
@@ -696,6 +727,25 @@ namespace NAreaCode.Models
                         break;
                 }
             }
+
+            ChangeEventList.Add(new ChangeEvent
+            {
+                Id = 99999993,
+                施行年月日 = new DateTime(1971, 11, 1),
+                変更事由 = 変更事由.編入合併,
+                変更前地域 = new List<int> { 47308, 47307 },
+                変更後地域 = new List<int> { 47308 },
+                変更事由の詳細 = "上本部村(47307)が本部町(47308)に編入"
+            });
+            ChangeEventList.Add(new ChangeEvent
+            {
+                Id = 99999994,
+                施行年月日 = new DateTime(1971, 12, 1),
+                変更事由 = 変更事由.市制施行,
+                変更前地域 = new List<int> { 47342 },
+                変更後地域 = new List<int> { 47210 },
+                変更事由の詳細 = "糸満町(47342)が糸満市(47210)に市制施行"
+            });
 
             string path = Path.Combine(_path, "ChangeEventList.json");
             JsonUtils.SaveToJson(path, ChangeEventList);
@@ -725,6 +775,11 @@ namespace NAreaCode.Models
             {
                 ev.変更前地域 = new List<int> { 22100, 22383 };
                 ev.変更後地域 = new List<int> { 22100 };
+            }
+            else if (ev0.Id == 218) //早良町→福岡市
+            {
+                ev.変更前地域 = new List<int> { 40100, 40321 };
+                ev.変更後地域 = new List<int> { 40100 };
             }
             else if (ev0.Description.EndsWith(")に編入"))
             {
