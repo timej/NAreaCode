@@ -115,6 +115,7 @@ namespace NAreaCode
             var areaCodeClass = new NAreaCodeClass(_dataPath);
             var areaCodes = areaCodeClass.GetStandardAreaCode(0, new DateTime(1970, 4, 1));
             areaCodes.Sort((x, y) => x.Id - y.Id);
+            var districtList = areaCodeClass.DistrictList;
 
             int m = 0;
             int n = 0;
@@ -142,6 +143,41 @@ namespace NAreaCode
                         continue;
                     }
                 }
+
+                //名称のチェック
+                //政令市
+                if(areaCodes[n].Id/100%10 == 1 && areaCodes[n].名称.EndsWith("市"))
+                {
+                    if (areaCodes[n].名称 != mmmDataList[m].GName1)
+                        Console.WriteLine($"名称相違 {areaCodes[n].Id} : NAreaCode {areaCodes[n].名称} | MMM {mmmDataList[m].GName1}");
+                }
+                else if(areaCodes[n].名称.EndsWith("市") || areaCodes[n].名称.EndsWith("区"))
+                {
+                    if(areaCodes[n].名称 != mmmDataList[m].CName1)
+                        Console.WriteLine($"名称相違 {areaCodes[n].Id} : NAreaCode {areaCodes[n].名称} | MMM {mmmDataList[m].CName1}");
+                }
+                else
+                {
+                    if (areaCodes[n].名称 != mmmDataList[m].CName1)
+                        Console.WriteLine($"名称相違 {areaCodes[n].Id} : NAreaCode {areaCodes[n].名称} | MMM {mmmDataList[m].CName1}");
+                    if (areaCodes[n].郡支庁 < 100)
+                    {
+                        var subpref = SubPrefecture.Hokkaido.FirstOrDefault(x => x.Id == areaCodes[n].郡支庁);
+                        if (subpref.支庁名 != mmmDataList[m].GName1)
+                            Console.WriteLine($"郡名称相違 {areaCodes[n].Id} : NAreaCode {subpref.支庁名}{areaCodes[n].名称} | MMM {mmmDataList[m].GName1}{mmmDataList[m].CName1}");
+                    }
+                    else
+                    {
+                        var district = districtList.FirstOrDefault(x => x.Id == areaCodes[n].郡支庁);
+                        if (district == null)
+                        {
+                            Console.WriteLine($"郡名称相違 {areaCodes[n].Id} : NAreaCode 郡名なし {areaCodes[n].名称} | MMM {mmmDataList[m].GName1}{mmmDataList[m].CName1}");
+                        }
+                        else if (district.名称 != mmmDataList[m].GName1)
+                            Console.WriteLine($"郡名称相違 {areaCodes[n].Id} : NAreaCode {district.名称}{areaCodes[n].名称} | MMM {mmmDataList[m].GName1}{mmmDataList[m].CName1}");
+                    }
+                }
+
                 prev = mmmDataList[m].JisCode1;
                 m++;
                 n++;

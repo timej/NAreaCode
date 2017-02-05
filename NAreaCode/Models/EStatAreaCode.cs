@@ -260,6 +260,16 @@ namespace NAreaCode.Models
             string durationAreaCode;
             if (areaCode.Id / 1000 == 47 && issued < new DateTime(1972, 5, 15))
             {
+                //郡のバグ
+                if (areaCode.Id == 47362)
+                {
+                    areaCode.名称 = "下地町";
+                    areaCode.ふりがな = "しもじちょう";
+                    areaCode.英語名 = "Shimoji-cho";
+                    areaCode.郡支庁 = 47360;
+                    return;
+                }
+                //1970～1970-5-15の間に合併
                 if (areaCode.Id == 47307)
                 {
                     areaCode.名称 = "上本部村";
@@ -268,7 +278,8 @@ namespace NAreaCode.Models
                     areaCode.郡支庁 = 47300;
                     return;
                 }
-                else if (areaCode.Id == 47342)
+                //1970～1970-5-15の間に市制実施
+                if (areaCode.Id == 47342)
                 {
                     areaCode.名称 = "糸満町";
                     areaCode.ふりがな = "いとまんちょう";
@@ -276,13 +287,12 @@ namespace NAreaCode.Models
                     areaCode.郡支庁 = 47340;
                     return;
                 }
-                else
-                {
-                    durationAreaCode = areaCode.Id + "-19720515";
-                }
+               
+                durationAreaCode = areaCode.Id + "-19720515";
+               
             }
             else
-                durationAreaCode = areaCode.Id + "-" + issued.ToString("yyyyMMdd");
+                durationAreaCode = areaCode.Id.ToString("00000") + "-" + issued.ToString("yyyyMMdd");
             //政令市の区に編入しているケース
             if (durationAreaCode == "26100-20050401") //771京北町
                 durationAreaCode = "26100-19700401";
