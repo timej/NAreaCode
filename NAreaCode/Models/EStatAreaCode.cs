@@ -265,7 +265,7 @@ namespace NAreaCode.Models
                     areaCode.名称 = "上本部村";
                     areaCode.ふりがな = "かみもとぶそん";
                     areaCode.英語名 = "Kamimotobu-son";
-                    areaCode.郡 = "47300";
+                    areaCode.郡支庁 = 47300;
                     return;
                 }
                 else if (areaCode.Id == 47342)
@@ -273,7 +273,7 @@ namespace NAreaCode.Models
                     areaCode.名称 = "糸満町";
                     areaCode.ふりがな = "いとまんちょう";
                     areaCode.英語名 = "Itoman-cho";
-                    areaCode.郡 = "47340";
+                    areaCode.郡支庁 = 47340;
                     return;
                 }
                 else
@@ -301,8 +301,9 @@ namespace NAreaCode.Models
                 areaCode.名称 = areaCode0.名称;
                 areaCode.ふりがな = areaCode0.ふりがな;
                 areaCode.英語名 = areaCode0.英語名;
-                areaCode.支庁 = areaCode0.支庁;
-                areaCode.郡 = areaCode0.郡;
+                areaCode.郡支庁 = areaCode0.郡支庁;
+                areaCode.郡名称 = areaCode0.郡名称;
+                areaCode.郡ふりがな = areaCode0.郡ふりがな;
                 return;
             }
 
@@ -327,22 +328,21 @@ namespace NAreaCode.Models
                     //都道府県はパス
                     if (part[2] == '0')
                         continue;
-                    string shortpart = part.Substring(0, 5);
+                    int shortpart = int.Parse(part.Substring(0, 5));
                     //北海道
                     if (areaCode.Id / 1000 == 1)
                     {
                         //北方領土を他と区分するため、支庁コードを99にした
-                        areaCode.支庁 = areaCode.Id > 1694 ? 99 : SubPrefecture.Hokkaido.First(x => x.地域コード == int.Parse(shortpart)).Id;
+                        areaCode.郡支庁 = areaCode.Id > 1694 ? 99 : SubPrefecture.Hokkaido.First(x => x.地域コード == shortpart).Id;
                     }
-                    //対馬は対馬支庁で登録されている
-                    else if((areaCode.Id / 10) != 4244)
+                    else
                     {
-                        var district = DistrictList.FirstOrDefault(x => x.Id == int.Parse(shortpart));
+                        var district = DistrictList.FirstOrDefault(x => x.Id == shortpart);
                         if(district == null)
                         {
                             DistrictList.Add(GetDistrictFromLod(part));
                         }
-                        areaCode.郡 = shortpart;
+                        areaCode.郡支庁 = shortpart;
                     }
                 }
                 //北海道・対馬のみ
@@ -350,19 +350,9 @@ namespace NAreaCode.Models
                 {
                     string o = result["o"].ToString();
                     if (o.EndsWith("@ja"))
-                    {
-                        if (areaCode.郡 != null)
-                            areaCode.郡 = o.Substring(0, o.Length - 3) + ";" + areaCode.郡;
-                        else
-                            areaCode.郡 = o.Substring(0, o.Length - 3);
-                    }
+                        areaCode.郡名称 = o.Substring(0, o.Length - 3);
                     else if (o.EndsWith("@ja-hrkt"))
-                    {
-                        if (areaCode.郡 != null)
-                            areaCode.郡 = areaCode.郡 + ";" + o.Substring(0, o.Length - 8);
-                        else
-                            areaCode.郡 = o.Substring(0, o.Length - 8);
-                    } 
+                        areaCode.郡ふりがな = o.Substring(0, o.Length - 8);
                 }
             }
         }

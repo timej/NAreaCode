@@ -21,7 +21,7 @@ namespace NAreaCode.Models
             {
                 using (StreamWriter file = File.CreateText(fileName))
                 {
-                    JsonSerializer serializer = new JsonSerializer();
+                    JsonSerializer serializer = new JsonSerializer { NullValueHandling = NullValueHandling.Ignore };
                     serializer.Serialize(file, data);
                 }
             }

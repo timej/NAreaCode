@@ -50,7 +50,7 @@ namespace NAreaCode.Models
         public List<AreaCode> GetAreaCode(int pref, DateTime date)
         {
             var areaCodeList = new List<AreaCode>();
-            var areaLods = AreaCodeList.Where(x => x.施行年月日 <= date && x.廃止年月日 > date && x.支庁 != 99).OrderBy(x => x.Id);
+            var areaLods = AreaCodeList.Where(x => x.施行年月日 <= date && x.廃止年月日 > date && x.郡支庁 != 99).OrderBy(x => x.Id);
 
             foreach (var area in areaLods)
             {
@@ -75,7 +75,7 @@ namespace NAreaCode.Models
         //date日現在の市町村数
         public string GetNumber(DateTime date)
         {
-            var areaLods = AreaCodeList.Where(x => x.施行年月日 <= date && x.廃止年月日 > date && x.支庁 != 99);
+            var areaLods = AreaCodeList.Where(x => x.施行年月日 <= date && x.廃止年月日 > date && x.郡支庁 != 99);
 
             int city = 0;
             int town = 0;

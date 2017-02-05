@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "NAreaCode": {
-      "commandName": "Project",
-      "commandLineArgs": "test"
-    }
-  }
-}

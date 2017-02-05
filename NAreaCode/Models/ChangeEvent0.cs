@@ -1,13 +1,16 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace NAreaCode.Models
 {
+    //変更データ 
     class ChangeEvent0
     {
-        //変更データID
+        [JsonProperty("id")]
         public int Id { get; set; }
         //施行年月日
+        [JsonProperty("date")]
         public DateTime Date { get; set; }
         //変更理由
         // 政令指定都市施行 sacr:shiftToDesignatedCity
@@ -25,12 +28,16 @@ namespace NAreaCode.Models
         // 郡の新設sacr:establishmentOfNewDistrict
         // 郡の廃止sacr:abolishmentOfDistrict
         // その他sacr:others
+        [JsonProperty("reasonForChange")]
         public string ReasonForChange { get; set; }
         //変更前の期間つき標準地域コード
+        [JsonProperty("original")]
         public List<string> Original { get; set; }
         //変更後の期間つき標準地域コード
+        [JsonProperty("resulting")]
         public List<string> Resulting { get; set; }
         //変更事由の詳細
+        [JsonProperty("description")]
         public string Description { get; set; }
 
     }
