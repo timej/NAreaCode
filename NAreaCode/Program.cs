@@ -113,7 +113,7 @@ namespace NAreaCode
             var mmmDataList = MMMData.LoadMMMData(_dataPath);
 
             var areaCodeClass = new NAreaCodeClass(_dataPath);
-            var areaCodes = areaCodeClass.GetStandardAreaCode(0, new DateTime(1970, 4, 1));
+            var areaCodes = areaCodeClass.GetStandardAreaCode(0, new DateTime(1970, 4, 1), false);
             areaCodes.Sort((x, y) => x.Id - y.Id);
             var districtList = areaCodeClass.DistrictList;
 

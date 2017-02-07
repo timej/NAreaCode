@@ -95,7 +95,9 @@ namespace NAreaCode.Models
                     ExecuteLod(areaCode.Id, areaCode, true, false);
                 }
             }
-            foreach(var a in _absorptionToWard)
+
+            //町村が政令指定都市の区に編入された場合には、それに対応する期間付き地域コードはない。その前の期間付き地域コードと同じ名称等にする。
+            foreach (var a in _absorptionToWard)
             {
                 var prevcode = GetAreaCode(a.city, a.date.AddDays(-1));
                 var sareaCode = StandardAreaCodeList.FirstOrDefault(x => x.Id == a.city && x.施行年月日 == a.date);
@@ -108,8 +110,15 @@ namespace NAreaCode.Models
                 sareaCode.郡ふりがな = prevcode.郡ふりがな;
             }
 
-            JsonUtils.SaveToJson(path, StandardAreaCodeList);
+            //北海道の市に支庁・振興局コードを追加
+            foreach((int id, int subPref) in SubPrefecture.HokkaidoCity)
+            {
+                var acs = StandardAreaCodeList.Where(x => x.Id == id);
+                foreach (var ac in acs)
+                    ac.所属 = subPref;
+            }
 
+            //政令指定都市の区の処理
             foreach (var area in CurrentAreaList)
             {
                 if (area.AdministrativeClass == "Ward")
@@ -345,6 +354,7 @@ namespace NAreaCode.Models
             else if (durationAreaCode == "40130-19750301") //218早良町
                 durationAreaCode = "40130-19720401";
            */
+            //町村が政令指定都市の区に編入された場合には、それに対応する期間付き地域コードはない。その前の期間付き地域コードと同じ名称等にする。
             if (_absorptionToWard.Any(x => x.city == areaCode.Id && x.date == issued))
                 return;
 

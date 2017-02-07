@@ -63,12 +63,16 @@ namespace NAreaCode.Models
             return areaCodeList;
         }
 
-        public List<StandardAreaCode> GetStandardAreaCode(int pref, DateTime date)
+        public List<StandardAreaCode> GetStandardAreaCode(int pref, DateTime date, bool includeWard)
         {
-            if(pref == 0)
-            return AreaCodeList.Where(x => x.施行年月日 <= date && x.廃止年月日 > date).OrderBy(x => x.Id).ToList();
-            if(pref > 0 && pref < 48)
+            if(pref == 0 && includeWard)
+                return AreaCodeList.Where(x => x.施行年月日 <= date && x.廃止年月日 > date).OrderBy(x => x.Id).ToList();
+            if(pref > 0 && pref < 48 && includeWard)
                 return AreaCodeList.Where(x => x.施行年月日 <= date && x.廃止年月日 > date && x.Id / 1000 == pref).OrderBy(x => x.Id).ToList();
+            if (pref == 0)
+                return AreaCodeList.Where(x => x.施行年月日 <= date && x.廃止年月日 > date && x.種別 != 自治体種別.Ward).OrderBy(x => x.Id).ToList();
+            if (pref > 0 && pref < 48)
+                return AreaCodeList.Where(x => x.施行年月日 <= date && x.廃止年月日 > date && x.Id / 1000 == pref && x.種別 != 自治体種別.Ward).OrderBy(x => x.Id).ToList();
             return null;
         }
 
