@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using VDS.RDF;
 using VDS.RDF.Query;
 
@@ -17,6 +16,8 @@ namespace NAreaCode.Models
         private List<StandardAreaCode> StandardAreaCodeList;
         private List<StandardAreaCode> StandardAreaLodList0;
         private List<ChangeEvent> ChangeEventList;
+        private List<ChangeEvent> ChangeEventList1;
+        private List<ChangeEvent> WardChangeEventList;
         private List<District> DistrictList;
 
         private Dictionary<int, string> AreaCodeDic;
@@ -47,14 +48,17 @@ namespace NAreaCode.Models
         private readonly string _path;
         private readonly bool _isUpdate;
 
+        private List<int> _designatedCity = new List<int> { 1100, 4100, 11100, 12100, 13100, 13101, 13102, 13103, 13104, 13105, 13106, 13107, 13108, 13109, 13110, 13111, 13112, 13113, 13114, 13115, 13116, 13117, 13118, 13119, 13120, 13121, 13122, 13123, 14100, 15100, 22100, 22130, 23100, 26100, 27100, 27140, 28100, 33100, 34100, 40100, 40130, 43100};
+        private List<(int city, DateTime date)> _absorptionToWard = new List<(int city, DateTime date)>();
+
 
         public EStatAreaCode(bool isUpdate, string path)
         {
             _path = path;
             _isUpdate = isUpdate;
 
-            GetChangeEventList();
             GetCurrentAreaCode();
+            GetChangeEventList();
             GetDistrict();
             GetStandardAreaCode();
         }
@@ -65,6 +69,9 @@ namespace NAreaCode.Models
 
         private void GetStandardAreaCode()
         {
+            StandardAreaCode GetAreaCode(int id, DateTime date) =>  
+                StandardAreaCodeList.FirstOrDefault(x => x.Id == id && x.施行年月日 <= date && x.廃止年月日 > date);
+
             string path = Path.Combine(_path, "StandardAreaCodeList.json");
 
             if (_isUpdate && File.Exists(path))
@@ -85,18 +92,48 @@ namespace NAreaCode.Models
                         施行データ = new List<int>(),
                         廃止データ = new List<int>()
                     };
-                    ExecuteLod(area.Id, areaCode, true);
+                    ExecuteLod(areaCode.Id, areaCode, true, false);
                 }
             }
+            foreach(var a in _absorptionToWard)
+            {
+                var prevcode = GetAreaCode(a.city, a.date.AddDays(-1));
+                var sareaCode = StandardAreaCodeList.FirstOrDefault(x => x.Id == a.city && x.施行年月日 == a.date);
+                sareaCode.名称 = prevcode.名称;
+                sareaCode.ふりがな = prevcode.ふりがな;
+                sareaCode.英語名 = prevcode.英語名;
+                sareaCode.種別 = prevcode.種別;
+                sareaCode.所属 = prevcode.所属;
+                sareaCode.郡名称 = prevcode.郡名称;
+                sareaCode.郡ふりがな = prevcode.郡ふりがな;
+            }
+
             JsonUtils.SaveToJson(path, StandardAreaCodeList);
-                string districtPath = Path.Combine(_path, "District.json");
-                JsonUtils.SaveToJson(districtPath, DistrictList);
+
+            foreach (var area in CurrentAreaList)
+            {
+                if (area.AdministrativeClass == "Ward")
+                {
+                    StandardAreaCode areaCode = new StandardAreaCode
+                    {
+                        Id = area.Id,
+                        廃止年月日 = DateTime.MaxValue,
+                        施行データ = new List<int>(),
+                        廃止データ = new List<int>()
+                    };
+                    ExecuteLod(areaCode.Id, areaCode, true, true);
+                }
+            }
+
+            JsonUtils.SaveToJson(path, StandardAreaCodeList);
+            string districtPath = Path.Combine(_path, "District.json");
+            JsonUtils.SaveToJson(districtPath, DistrictList);
         }
 
-        private void ExecuteLod(int code, StandardAreaCode areaCode, bool isExistData)
+        private void ExecuteLod(int code, StandardAreaCode areaCode, bool isExistData, bool isWard)
         {
             var privAreas = new List<int>();
-            var areaLodList = MakeAreaLod(code, areaCode, isExistData, false, privAreas);
+            var areaLodList = MakeAreaLod(code, areaCode, isExistData, false, privAreas, isWard);
 
             StandardAreaCodeList.AddRange(areaLodList);
 
@@ -109,14 +146,16 @@ namespace NAreaCode.Models
                     continue;
                 var lod = StandardAreaCodeList.FirstOrDefault(x => x.Id == privArea);
                 if (lod == null)
-                    ExecuteLod(privArea, null, false);
+                    ExecuteLod(privArea, null, false, isWard);
             }
         }
 
-        private List<StandardAreaCode> MakeAreaLod(int code, StandardAreaCode areaCode, bool isExistData, bool isCheck, List<int> privAreas)
+        private List<StandardAreaCode> MakeAreaLod(int code, StandardAreaCode areaCode, bool isExistData, bool isCheck, List<int> privAreas, bool isWard)
         {
             var areaLodList = new List<StandardAreaCode>();
-            var events = ChangeEventList.Where(x => x.変更前地域.Contains(code) || x.変更後地域.Contains(code)).ToList();
+            var events = isWard ? 
+                WardChangeEventList.Where(x => x.変更前地域.Contains(code) || x.変更後地域.Contains(code)).ToList():
+                ChangeEventList.Where(x => x.変更前地域.Contains(code) || x.変更後地域.Contains(code)).ToList();
             events.Sort((x, y) =>
             {
                 int c = DateTime.Compare(y.施行年月日, x.施行年月日);
@@ -151,7 +190,7 @@ namespace NAreaCode.Models
                                 //"鹿島町(08405)が鹿嶋町に名称変更し、鹿嶋市(08222)に市制施行"
                                 areaCode.施行年月日 = v.施行年月日;
                                 areaCode.施行データ.Add(v.Id);
-                                if (!isCheck) GetAreaData(areaCode, v.施行年月日);
+                                if (!isCheck) GetAreaData(areaCode, v.施行年月日, isWard);
                                 areaLodList.Add(areaCode);
 
                                 areaCode = new StandardAreaCode
@@ -173,7 +212,7 @@ namespace NAreaCode.Models
                         {
                             areaCode.施行年月日 = v.施行年月日;
                             areaCode.施行データ.Add(v.Id);
-                            if (!isCheck) GetAreaData(areaCode, v.施行年月日);
+                            if (!isCheck) GetAreaData(areaCode, v.施行年月日, isWard);
                             areaLodList.Add(areaCode);
                             isExistData = false;
                         }
@@ -249,13 +288,13 @@ namespace NAreaCode.Models
             if (isExistData)
             {
                 areaCode.施行年月日 = _startDate;
-                if (!isCheck) GetAreaData(areaCode, _startDate);
+                if (!isCheck) GetAreaData(areaCode, _startDate, isWard);
                 areaLodList.Add(areaCode);
             }
             return areaLodList;
         }
 
-        private void GetAreaData(StandardAreaCode areaCode, DateTime issued)
+        private void GetAreaData(StandardAreaCode areaCode, DateTime issued, bool isWard)
         {
             string durationAreaCode;
             if (areaCode.Id / 1000 == 47 && issued < new DateTime(1972, 5, 15))
@@ -266,7 +305,7 @@ namespace NAreaCode.Models
                     areaCode.名称 = "下地町";
                     areaCode.ふりがな = "しもじちょう";
                     areaCode.英語名 = "Shimoji-cho";
-                    areaCode.郡支庁 = 47360;
+                    areaCode.所属 = 47360;
                     return;
                 }
                 //1970～1970-5-15の間に合併
@@ -275,7 +314,7 @@ namespace NAreaCode.Models
                     areaCode.名称 = "上本部村";
                     areaCode.ふりがな = "かみもとぶそん";
                     areaCode.英語名 = "Kamimotobu-son";
-                    areaCode.郡支庁 = 47300;
+                    areaCode.所属 = 47300;
                     return;
                 }
                 //1970～1970-5-15の間に市制実施
@@ -284,7 +323,7 @@ namespace NAreaCode.Models
                     areaCode.名称 = "糸満町";
                     areaCode.ふりがな = "いとまんちょう";
                     areaCode.英語名 = "Itoman-cho";
-                    areaCode.郡支庁 = 47340;
+                    areaCode.所属 = 47340;
                     return;
                 }
                
@@ -294,6 +333,7 @@ namespace NAreaCode.Models
             else
                 durationAreaCode = areaCode.Id.ToString("00000") + "-" + issued.ToString("yyyyMMdd");
             //政令市の区に編入しているケース
+            /*
             if (durationAreaCode == "26100-20050401") //771京北町
                 durationAreaCode = "26100-19700401";
             else if (durationAreaCode == "34100-20050425") //801湯来町
@@ -304,6 +344,9 @@ namespace NAreaCode.Models
                 durationAreaCode = "22100-20050401";
             else if (durationAreaCode == "40130-19750301") //218早良町
                 durationAreaCode = "40130-19720401";
+           */
+            if (_absorptionToWard.Any(x => x.city == areaCode.Id && x.date == issued))
+                return;
 
             var areaCode0 = StandardAreaLodList0?.FirstOrDefault(x => x.Id == areaCode.Id && x.施行年月日 == issued);
             if (areaCode0 != null)
@@ -311,13 +354,14 @@ namespace NAreaCode.Models
                 areaCode.名称 = areaCode0.名称;
                 areaCode.ふりがな = areaCode0.ふりがな;
                 areaCode.英語名 = areaCode0.英語名;
-                areaCode.郡支庁 = areaCode0.郡支庁;
+                areaCode.種別 = areaCode0.種別;
+                areaCode.所属 = areaCode0.所属;
                 areaCode.郡名称 = areaCode0.郡名称;
                 areaCode.郡ふりがな = areaCode0.郡ふりがな;
                 return;
             }
 
-            string query = Prefix + $"SELECT * WHERE {{sac:C{durationAreaCode} ?p ?o. FILTER(?p = rdfs:label || ?p = dcterms:isPartOf || ?p = sacs:districtOfSubPrefecture)}}";
+            string query = Prefix + $"SELECT * WHERE {{sac:C{durationAreaCode} ?p ?o. FILTER(?p = rdfs:label || ?p = dcterms:isPartOf || ?p = sacs:districtOfSubPrefecture || ?p = sacs:administrativeClass)}}";
             var results = endpoint.QueryWithResultSet(query);
             foreach (var result in results)
             {
@@ -340,20 +384,22 @@ namespace NAreaCode.Models
                         continue;
                     int shortpart = int.Parse(part.Substring(0, 5));
                     //北海道
-                    if (areaCode.Id / 1000 == 1)
+                    if (areaCode.Id / 1000 == 1 && !isWard )
                     {
                         //北方領土を他と区分するため、支庁コードを99にした
-                        areaCode.郡支庁 = areaCode.Id > 1694 ? 99 : SubPrefecture.Hokkaido.First(x => x.地域コード == shortpart).Id;
+                        areaCode.所属 = areaCode.Id > 1694 ? 99 : SubPrefecture.Hokkaido.First(x => x.地域コード == shortpart).Id;
                     }
-                    else
+                    else if(!isWard)
                     {
                         var district = DistrictList.FirstOrDefault(x => x.Id == shortpart);
                         if(district == null)
                         {
                             DistrictList.Add(GetDistrictFromLod(part));
                         }
-                        areaCode.郡支庁 = shortpart;
+                        areaCode.所属 = shortpart;
                     }
+                    else
+                        areaCode.所属 = shortpart;
                 }
                 //北海道・対馬のみ
                 else if (p == sacs + "districtOfSubPrefecture")
@@ -363,6 +409,11 @@ namespace NAreaCode.Models
                         areaCode.郡名称 = o.Substring(0, o.Length - 3);
                     else if (o.EndsWith("@ja-hrkt"))
                         areaCode.郡ふりがな = o.Substring(0, o.Length - 8);
+                }
+                else if (p == sacs + "administrativeClass")
+                {
+                    string o = result["o"].ToString().Substring(sacs.Length);
+                    areaCode.種別 = (自治体種別)Enum.Parse(typeof(自治体種別), o);
                 }
             }
         }
@@ -475,6 +526,12 @@ namespace NAreaCode.Models
             GetAllChangeEvent();
             GetChangeEventList0();
             ModifyChangeEventList();
+            //区の変更データを取り出す
+            GetWardChangeEventList();
+            string path = Path.Combine(_path, "ChangeEventList.json");
+            JsonUtils.SaveToJson(path, ChangeEventList);
+            path = Path.Combine(_path, "WardChangeEventList.json");
+            JsonUtils.SaveToJson(path, WardChangeEventList);
         }
 
         //すべての変更データのIDと変更事由を取得
@@ -581,7 +638,7 @@ namespace NAreaCode.Models
 
         private void ModifyChangeEventList()
         {
-            ChangeEventList = new List<ChangeEvent>();
+            ChangeEventList1 = new List<ChangeEvent>();
 
             //データのバグ修正
             var event1 = ChangeEventList0.First(x => x.Id == 394);
@@ -606,31 +663,31 @@ namespace NAreaCode.Models
                         ev.変更事由 = 変更事由.新設合併;
                         ModifyOfEstablishment(ev, ev0);
                         ev.変更前地域 = ToStandardCode(ev0.Original);
-                        ChangeEventList.Add(ev);
+                        ChangeEventList1.Add(ev);
                         break;
                     case "absorption":
                         ev.変更事由 = 変更事由.編入合併;
                         ModifyOfAbsorption(ev, ev0);
-                        ChangeEventList.Add(ev);
+                        ChangeEventList1.Add(ev);
                         break;
                     case "shiftToDesignatedCity":
                         ev.変更事由 = 変更事由.政令指定都市施行;
                         GetResultingCode(ev, ev0, new string[] { ")への政令指定都市施行", ")への政令指定都市移行" });
                         ev.変更前地域 = ToStandardCode(ev0.Original);
-                        ChangeEventList.Add(ev);
+                        ChangeEventList1.Add(ev);
                         break;
                     case "changesToCity":
                         ev.変更事由 = 変更事由.市制施行;
                         GetResultingCode(ev, ev0, new string[] { ")に市制施行" });
                         ev.変更前地域 = ToStandardCode(ev0.Original);
-                        ChangeEventList.Add(ev);
+                        ChangeEventList1.Add(ev);
                         break;
                     case "changesOfBoundariesOfDistrict":
                         //次のレコードの削除して、2つのレコードにする
                         //鳳至郡穴水町(17421)、門前町(17422)が鳳珠郡穴水町(17461)、門前町(17462)に郡の区域変更
                         if (ev0.Id == 634)
                         {
-                            ChangeEventList.Add(new ChangeEvent
+                            ChangeEventList1.Add(new ChangeEvent
                             {
                                 Id = 99999991,
                                 施行年月日 = new DateTime(2005, 3, 1),
@@ -639,7 +696,7 @@ namespace NAreaCode.Models
                                 変更後地域 = new List<int> { 17461 },
                                 変更事由の詳細 = "鳳至郡穴水町(17421)が鳳珠郡穴水町(17461)に郡の区域変更"
                             });
-                            ChangeEventList.Add(new ChangeEvent
+                            ChangeEventList1.Add(new ChangeEvent
                             {
                                 Id = 99999992,
                                 施行年月日 = new DateTime(2005, 3, 1),
@@ -654,7 +711,7 @@ namespace NAreaCode.Models
                             ev.変更事由 = 変更事由.郡の区域変更;
                             GetResultingCode(ev, ev0, new string[] { ")に郡の区域変更", ")に区域変更" });
                             ev.変更前地域 = ToStandardCode(ev0.Original);
-                            ChangeEventList.Add(ev);
+                            ChangeEventList1.Add(ev);
                         }
                         break;
                     case "changesOfNames":
@@ -676,32 +733,32 @@ namespace NAreaCode.Models
                             ev.変更前地域 = ToStandardCode(ev0.Original);
                             ev.変更後地域 = ToStandardCode(ev0.Resulting);
                         }
-                        ChangeEventList.Add(ev);
+                        ChangeEventList1.Add(ev);
                         break;
                     case "changesToTown":
                         ev.変更事由 = 変更事由.町制施行;
                         ev.変更前地域 = ToStandardCode(ev0.Original);
                         ev.変更後地域 = ToStandardCode(ev0.Resulting);
-                        ChangeEventList.Add(ev);
+                        ChangeEventList1.Add(ev);
                         break;
 
                     case "establishmentOfWards":
                         ev.変更事由 = 変更事由.区の新設;
                         ev.変更前地域 = ToStandardCode(ev0.Original);
                         ev.変更後地域 = ToStandardCode(ev0.Resulting);
-                        ChangeEventList.Add(ev);
+                        ChangeEventList1.Add(ev);
                         break;
                     case "separation":
                         ev.変更事由 = 変更事由.分離;
                         ev.変更前地域 = ToStandardCode(ev0.Original);
                         ev.変更後地域 = ToStandardCode(ev0.Resulting);
-                        ChangeEventList.Add(ev);
+                        ChangeEventList1.Add(ev);
                         break;
                     case "divisionIntoSeveralMunicipalities":
                         ev.変更事由 = 変更事由.分割;
                         ev.変更前地域 = ToStandardCode(ev0.Original);
                         ev.変更後地域 = ToStandardCode(ev0.Resulting);
-                        ChangeEventList.Add(ev);
+                        ChangeEventList1.Add(ev);
                         break;
                     case "others":
                         ev.変更事由 = 変更事由.その他;
@@ -715,7 +772,7 @@ namespace NAreaCode.Models
                         ev.変更後地域 = ToStandardCode(ev0.Resulting);
                         //沖縄県を1970年4月1日からにするため復帰のデータを削除
                         if (ev.Id != 1)
-                            ChangeEventList.Add(ev);
+                            ChangeEventList1.Add(ev);
                         break;
 
                     case "shiftToAnotherKindOfCity":
@@ -728,7 +785,7 @@ namespace NAreaCode.Models
                 }
             }
 
-            ChangeEventList.Add(new ChangeEvent
+            ChangeEventList1.Add(new ChangeEvent
             {
                 Id = 99999993,
                 施行年月日 = new DateTime(1971, 11, 1),
@@ -737,7 +794,7 @@ namespace NAreaCode.Models
                 変更後地域 = new List<int> { 47308 },
                 変更事由の詳細 = "上本部村(47307)が本部町(47308)に編入"
             });
-            ChangeEventList.Add(new ChangeEvent
+            ChangeEventList1.Add(new ChangeEvent
             {
                 Id = 99999994,
                 施行年月日 = new DateTime(1971, 12, 1),
@@ -745,17 +802,14 @@ namespace NAreaCode.Models
                 変更前地域 = new List<int> { 47342 },
                 変更後地域 = new List<int> { 47210 },
                 変更事由の詳細 = "糸満町(47342)が糸満市(47210)に市制施行"
-            });
-
-            string path = Path.Combine(_path, "ChangeEventList.json");
-            JsonUtils.SaveToJson(path, ChangeEventList);
-         
+            });         
         }
 
         // 編入合併
         private void ModifyOfAbsorption(ChangeEvent ev, ChangeEvent0 ev0)
         {
-            //政令指定市の区への編入が4件あるので例外処理
+            //政令指定市の区への編入が5件あるので例外処理
+            /*
             if(ev0.Id == 771) //京北町
             {
                 ev.変更前地域 = new List<int> { 26100, 26381};
@@ -781,7 +835,8 @@ namespace NAreaCode.Models
                 ev.変更前地域 = new List<int> { 40100, 40321 };
                 ev.変更後地域 = new List<int> { 40100 };
             }
-            else if (ev0.Description.EndsWith(")に編入"))
+            */
+            if (ev0.Description.EndsWith(")に編入"))
             {
                 int code = int.Parse(ev0.Description.Substring(ev0.Description.Length - 9, 5));
                 ev.変更後地域 = new List<int> { code };
@@ -859,6 +914,108 @@ namespace NAreaCode.Models
         private List<int> ToStandardCode(List<string> list0)
         {
             return list0.Select(x => int.Parse(x.Substring(0, 5))).OrderBy(x => x).ToList();
+        }
+
+        private void GetWardChangeEventList()
+        {
+            var cities = CurrentAreaList.Where(x => ((x.Id / 100 % 10) == 1) && x.AdministrativeClass != "Ward");
+            foreach(var city in cities)
+            {
+                if (!_designatedCity.Contains(city.Id))
+                    _designatedCity.Add(city.Id);
+            }
+
+            ChangeEventList = new List<ChangeEvent>();
+            WardChangeEventList = new List<ChangeEvent>();
+
+            foreach(var ev in ChangeEventList1)
+            {
+                bool isContainsWard = false;
+                bool isContainsNotWard = false;
+
+                foreach(var c in ev.変更前地域)
+                {
+                    if(c / 100 %10 == 1)
+                    {
+                        if (_designatedCity.Contains(c))
+                            isContainsNotWard = true;
+                        else
+                            isContainsWard = true;
+                    }
+                    else
+                        isContainsNotWard = true;
+                }
+                foreach (var c in ev.変更後地域)
+                {
+                    if (c / 100 % 10 == 1)
+                    {
+                        if (_designatedCity.Contains(c))
+                            isContainsNotWard = true;
+                        else
+                            isContainsWard = true;
+                    }
+                    else
+                        isContainsNotWard = true;
+                }
+                if (!isContainsWard)
+                    ChangeEventList.Add(ev);
+                else if (!isContainsNotWard)
+                    WardChangeEventList.Add(ev);
+                else if(isContainsWard && isContainsNotWard)
+                {
+                    WardChangeEventList.Add(ev);
+                    ChangeEventList.Add(new ChangeEvent {
+                        Id = ev.Id,
+                        施行年月日 = ev.施行年月日,
+                        変更事由 = ev.変更事由,
+                        変更前地域 = GetSucceed(ev.変更前地域, ev.施行年月日),
+                        変更後地域 = GetSucceed(ev.変更後地域, ev.施行年月日),
+                        変更事由の詳細 = ev.変更事由の詳細
+                    });
+                }
+            }
+        }
+
+        private List<int> GetSucceed(List<int> list, DateTime issuedDate)
+        {
+            List<int> ret = new List<int>();
+            foreach (var c in list)
+            {
+                if (c / 100 % 10 == 1)
+                {
+                    if (_designatedCity.Contains(c))
+                        ret.Add(c);
+                    else
+                    {
+                        int d = GetParentCity(c);
+                        if(!_absorptionToWard.Contains((d, issuedDate)))
+                            _absorptionToWard.Add((d, issuedDate));
+                        ret.Add(d);
+                    }
+                }
+                else
+                    ret.Add(c);
+            }
+            return ret;
+        }
+        private int GetParentCity(int ward)
+        {
+            int pref = ward / 1000;
+            var cities = _designatedCity.Where(x => x / 1000 == pref);
+            int ret = 0;
+            int dif = 100;
+            foreach(var city in cities)
+            {
+                if((ward - city) > 0)
+                {
+                    if((ward - city) < dif)
+                    {
+                        ret = city;
+                        dif = ward - city;
+                    }
+                }
+            }
+            return ret;
         }
 
         #endregion

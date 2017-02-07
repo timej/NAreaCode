@@ -160,15 +160,15 @@ namespace NAreaCode
                 {
                     if (areaCodes[n].名称 != mmmDataList[m].CName1)
                         Console.WriteLine($"名称相違 {areaCodes[n].Id} : NAreaCode {areaCodes[n].名称} | MMM {mmmDataList[m].CName1}");
-                    if (areaCodes[n].郡支庁 < 100)
+                    if (areaCodes[n].所属 < 100)
                     {
-                        var subpref = SubPrefecture.Hokkaido.FirstOrDefault(x => x.Id == areaCodes[n].郡支庁);
+                        var subpref = SubPrefecture.Hokkaido.FirstOrDefault(x => x.Id == areaCodes[n].所属);
                         if (subpref.支庁名 != mmmDataList[m].GName1)
                             Console.WriteLine($"郡名称相違 {areaCodes[n].Id} : NAreaCode {subpref.支庁名}{areaCodes[n].名称} | MMM {mmmDataList[m].GName1}{mmmDataList[m].CName1}");
                     }
                     else
                     {
-                        var district = districtList.FirstOrDefault(x => x.Id == areaCodes[n].郡支庁);
+                        var district = districtList.FirstOrDefault(x => x.Id == areaCodes[n].所属);
                         if (district == null)
                         {
                             Console.WriteLine($"郡名称相違 {areaCodes[n].Id} : NAreaCode 郡名なし {areaCodes[n].名称} | MMM {mmmDataList[m].GName1}{mmmDataList[m].CName1}");
