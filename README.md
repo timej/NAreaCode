@@ -11,7 +11,12 @@
 
 
 ## 統計LODの標準地域コードの使い方
-前橋市の現行標準地域コードを使って現在有効な期間つき標準地域コードを照会
+
+- SPARQLエンドポイント: https://data.e-stat.go.jp/lod/sparql/query
+- 検索用画面: https://data.e-stat.go.jp/lod/sparql/
+
+以下のPREFIXが必要です。
+
 ```
 PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs:<http://www.w3.org/2000/01/rdf-schema#>
@@ -22,6 +27,10 @@ PREFIX sac:<http://data.e-stat.go.jp/lod/sac/>
 PREFIX sace:<http://data.e-stat.go.jp/lod/sace/>
 PREFIX sacr:<http://data.e-stat.go.jp/lod/sacr/>
 PREFIX owl:<http://www.w3.org/2002/07/owl#>
+```
+
+前橋市の現行標準地域コードを使って現在有効な期間つき標準地域コードを照会
+```
 SELECT * WHERE {sac:C10201 ?p ?o.}
 ```
 期限付きコードが C10201-20090505であることがわかるので、以下でその期間つき標準地域コードを照会
