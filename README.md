@@ -4,8 +4,12 @@
 そこで、[統計LOD](https://data.e-stat.go.jp/lodw/)で、標標準地域コードのデータが公開されているので、それを利用して、1970年以降の任意の時点での市区町村コード表の作成や対応表が作成できることを目標にしてこのデータベースを作成しました。
 - 動作環境 Visual Studio 2017 RC3 又は .NET Core SDK 1.0 RC3
 
+### コマンド
+- new 履歴付市区町村コードデータベースを新規作成します。処理に1時間ぐらいかかるし、統計LOD のサイトに負荷をかけるのでできるだけ使わない方がいいです。
+- update 統計LODのデータが更新されたときに履歴付市区町村コードデータベースを更新します。
+- test Municipality Map Maker ウェブ版からダウンロードしたテストデータとのチェックをしていあｍす。
 ### データ
-[dataフォルダー](/timej/NAreaCode/tree/master/NAreaCode/data) に作成したデータを入れてあります。
+[dataフォルダー](https://github.com/timej/NAreaCode/tree/master/NAreaCode/data) に作成したデータを入れてあります。
 
 - StandardAreaCodeList.json 期間付き市区町村コード
 - ChangeEventList0.json 統計LODの変更事由データ
