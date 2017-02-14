@@ -7,7 +7,8 @@
 ### コマンド
 - new 履歴付市区町村コードデータベースを新規作成します。処理に1時間ぐらいかかるし、統計LOD のサイトに負荷をかけるのでできるだけ使わない方がいいです。
 - update 統計LODのデータが更新されたときに履歴付市区町村コードデータベースを更新します。
-- test Municipality Map Maker ウェブ版からダウンロードしたテストデータとのチェックをしていあｍす。
+- test Municipality Map Maker ウェブ版からダウンロードしたテストデータとのチェックをしています。
+
 ### データ
 [dataフォルダー](https://github.com/timej/NAreaCode/tree/master/NAreaCode/data) に作成したデータを入れてあります。
 
