@@ -1,14 +1,21 @@
-# NAreaCode - 市区町村コード履歴アプリ
-
+# NAreaCode - 履歴付市区町村コードデータベース
 国勢調査等の市区町村別の統計データを過去から集計して比較しようとすると、平成の大合併により過去のデータは合併前の市町村のデータを集計する必要があって普通に手作業ですると非常に手間がかかる作業になります。
 
-そこで、[統計LOD](https://data.e-stat.go.jp/lodw/)で、標標準地域コードのデータが公開されているので、それを利用して、1970年以降の任意の時点での市区町村コード表の作成や対応表が作成できることを目標にしてこのアプリを作成しました。
-
+そこで、[統計LOD](https://data.e-stat.go.jp/lodw/)で、標標準地域コードのデータが公開されているので、それを利用して、1970年以降の任意の時点での市区町村コード表の作成や対応表が作成できることを目標にしてこのデータベースを作成しました。
 - 動作環境 Visual Studio 2017 RC3 又は .NET Core SDK 1.0 RC3
 
-市区町村コードの対応表が必要な場合は、[Municipality Map Maker ウェブ版](http://www.tkirimura.com/mmm/)で、対応表がダウンロードできるようになっているので、そちらを利用してください。
+### データ
+[dataフォルダー](/timej/NAreaCode/tree/master/NAreaCode/data) に作成したデータを入れてあります。
 
+- StandardAreaCodeList.json 期間付き市区町村コード
+- ChangeEventList0.json 統計LODの変更事由データ
+- ChangeEventList.json 市町村の変更事由データで必要な修正をしている
+- WardChangeEventList.json 政令指定都市の区の変更事由データ
+-	District0.json 現在ある郡のデータ
+-	District.json 郡のデータ
+- codelist_19701001and20151001.tsv Municipality Map Maker ウェブ版からダウンロードしたテストデータ
 
+※市区町村コードの対応表が必要な場合は、[Municipality Map Maker ウェブ版](http://www.tkirimura.com/mmm/)で、対応表がダウンロードできるようになってているものが、そちらを利用してください。
 
 ## 統計LODの標準地域コードの使い方
 
