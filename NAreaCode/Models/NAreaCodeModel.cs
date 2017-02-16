@@ -47,21 +47,15 @@ namespace NAreaCode.Models
             }
         }
 
-        public List<AreaCode> GetAreaCode(int pref, DateTime date)
-        {
-            var areaCodeList = new List<AreaCode>();
-            var areaLods = AreaCodeList.Where(x => x.施行年月日 <= date && x.廃止年月日 > date && x.所属 != 99).OrderBy(x => x.Id);
+        public IEnumerable<(int id, string 名称)> GetAreaCode(DateTime date) => AreaCodeList
+                .Where(x => x.施行年月日 <= date && x.廃止年月日 > date && x.所属 != 99)
+                .OrderBy(x => x.Id)
+                .Select(x => (id: x.Id, 名称: x.名称));
 
-            foreach (var area in areaLods)
-            {
-                areaCodeList.Add(new AreaCode
-                {
-                    Id = area.Id,
-                    名称 = area.名称
-                });
-            }
-            return areaCodeList;
-        }
+        public IEnumerable<(int id, string 名称)> GetAreaCode(int pref, DateTime date) => AreaCodeList
+            .Where(x => x.Id / 1000 == pref && x.施行年月日 <= date && x.廃止年月日 > date && x.所属 != 99)
+            .OrderBy(x => x.Id)
+            .Select(x => (id: x.Id, 名称: x.名称));
 
         public List<StandardAreaCode> GetStandardAreaCode(int pref, DateTime date, bool includeWard)
         {

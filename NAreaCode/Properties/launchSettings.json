@@ -2,7 +2,7 @@
   "profiles": {
     "NAreaCode": {
       "commandName": "Project",
-      "commandLineArgs": "update"
+      "commandLineArgs": "test"
     }
   }
 }

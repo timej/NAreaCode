@@ -5,9 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.Extensions.CommandLineUtils;
 using NAreaCode.Models;
 
 //コマンドラインの解析
+//https://gist.github.com/iamarcel/8047384bfbe9941e52817cf14a79dc34
 //https://msdn.microsoft.com/ja-jp/magazine/mt763239.aspx
 
 namespace NAreaCode
@@ -20,43 +22,85 @@ namespace NAreaCode
             ApplicationEnvironment env = PlatformServices.Default.Application;
 
             var startup = new Startup(env);
+
+            //Windows のコマンドプロンプトが既定ではSift_Jisコードのための対応
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             _dataPath = Path.Combine(env.ApplicationBasePath, "data");
 
-            if (args.Length > 0)
+            var app = new CommandLineApplication();
+            app.Name = "nacode";
+            app.HelpOption("-?|-h|--help");
+
+            app.Command("new", (command) =>
             {
-                if (args[0] == "new")
+                command.Description = "地域コードデータの更新";
+                command.OnExecute(() =>
                 {
                     New();
-                    return;
-                }
-                else if (args[0] == "update")
+                    return 0;
+                });
+            });
+
+            app.Command("update", (command) =>
+            {
+                command.Description = "地域コードデータの更新";
+                command.OnExecute(() =>
                 {
                     Update();
-                    return;
-                }
-                else if (args[0] == "pref")
+                    return 0;
+                });
+            });
+
+            app.Command("list", (command) =>
+            {
+                command.Description = "市区町村コードの一覧表示";
+                command.HelpOption("-?|-h|--help");
+                var pref = command.Option(
+                   "-p |--pref <都道府県コード>",
+                    "都道府県コードは、1から47までの数字で入力",
+                    CommandOptionType.SingleValue);
+                var date = command.Option(
+                    "-d |--date <日付>",
+                    "その日付の市区町村の一覧を表示。指定がない場合は今日。",
+                    CommandOptionType.SingleValue);
+
+                command.OnExecute(() =>
                 {
-                    //Prefecture(dataPath);
-                    //return;
-                }
-                    else if (args[0] == "list")
-                {
-                    List();
-                    return;
-                }
-                else if (args[0] == "test")
+                    DateTime dt;
+                    if (date.HasValue())
+                    { 
+                        if (!DateTime.TryParse(date.Value(), out dt))
+                        {
+                            Console.WriteLine("日付を正しい形式で入力してください。");
+                            return 0;
+                        }
+                    }
+                    else
+                        dt = DateTime.Today;
+                    if (pref.HasValue())
+                    {
+                        if (int.TryParse(pref.Value(), out int r))
+                            List(r, dt);
+                        else
+                            Console.WriteLine("-pオプションは、都道府県をコード1～47で指定してください");
+                    }
+                    else
+                        List(dt);
+                    return 0;
+                });
+            });
+
+            app.Command("test", (command) =>
+            {
+                command.Description = "MMMウェブ版の対応表とのチェック";
+                command.OnExecute(() =>
                 {
                     Test();
-                    return;
-                }
-                else if (args[0] == "info")
-                {
-                    //Info(areaCodeClass);
-                    //return;
-                }
-            }
-            Comment();
+                    return 0;
+                });
+            });
+
+            app.Execute(args);
         }
 
         private static void New()
@@ -69,39 +113,32 @@ namespace NAreaCode
             var eStatAreaCode = new EStatAreaCode(true, _dataPath);
         }
 
-        private static void Prefecture()
-        {
-            string path = Path.Combine(_dataPath, "pref.txt");
-            using (var sw = new StreamWriter(File.OpenWrite(path)))
-            {
-                for (int n = 1; n < 48; n++)
-                {
-                    var pref = new Prefecture {Id = n};
-                    EStatAreaCode.GetPrefectureData(pref);
-                    sw.WriteLine(
-                        $"new Prefecture {{Id = {pref.Id}, 名称 = \"{pref.名称}\", ふりがな = \"{pref.ふりがな}\", 英語名 = \"{pref.英語名}\"}},");
-                }
-            }
-        }
 
-        private static void Comment()
-        {
-            Console.WriteLine("NAreaCode - 地域コードツール");
-            Console.WriteLine("使用方法: NAreaCodo [command] [argument]");
-            Console.WriteLine("new: 地域コードデータの新規作成");
-            Console.WriteLine("update: 地域コードデータの更新");
-            Console.WriteLine("list: 市町村コードの一覧表示");
-        }
-
-        private static void List()
+        private static void List(DateTime dt)
         {
             var areaCodeClass = new NAreaCodeClass(_dataPath);
-            var areaCodes = areaCodeClass.GetAreaCode(0, DateTime.Today);
+            var areaCodes = areaCodeClass.GetAreaCode(dt);
             foreach (var code in areaCodes)
             {
-                Console.WriteLine($"{code.Id}\t{code.名称}");
+                Console.WriteLine($"{code.id}\t{code.名称}");
             }
         }
+
+        private static void List(int pref, DateTime dt)
+        {
+            var areaCodeClass = new NAreaCodeClass(_dataPath);
+            var areaCodes = areaCodeClass.GetAreaCode(pref, dt);
+            if (areaCodes.Any())
+            {
+                foreach (var code in areaCodes)
+                {
+                    Console.WriteLine($"{code.id}\t{code.名称}");
+                }
+            }
+            else
+                Console.WriteLine("-pオプションは、都道府県をコード1～47で指定してください");
+        }
+
 
         //Municipality Map Maker ウェブ版
         //http://www.tkirimura.com/mmm/

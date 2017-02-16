@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp1.1</TargetFramework>
-    <AssemblyName>NAreaCode</AssemblyName>
+    <AssemblyName>nacode</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>NAreaCode</PackageId>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
@@ -14,10 +14,12 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Content Remove="data\ChangeEventList.json" />
+    <None Remove="data\ChangeEventList.json" />
+    <None Remove="Models\AreaCode.d.ts" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="dotNetRDF" Version="1.0.13-pre6" />
+    <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="1.1.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="1.1.0" />
     <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
@@ -26,5 +28,13 @@
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.1'">
     <PackageReference Include="System.Text.Encoding.CodePages" Version="4.3.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Update="data\ChangeEventList.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Update="Models\NAreaCodeModel.d.ts">
+      <DependentUpon>NAreaCodeModel.cs</DependentUpon>
+    </None>
   </ItemGroup>
 </Project>
