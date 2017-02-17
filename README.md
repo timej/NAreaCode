@@ -2,12 +2,49 @@
 国勢調査等の市区町村別の統計データを過去から集計して比較しようとすると、平成の大合併により過去のデータは合併前の市町村のデータを集計する必要があって普通に手作業ですると非常に手間がかかる作業になります。
 
 そこで、[統計LOD](https://data.e-stat.go.jp/lodw/)で、標標準地域コードのデータが公開されているので、それを利用して、1970年以降の任意の時点での市区町村コード表の作成や対応表が作成できることを目標にしてこのデータベースを作成しました。
-- .NET Core コンソール アプリケーションです。
-- 動作環境 Visual Studio 2017 RC4 又は .NET Core SDK 1.0 RC4
+
+### 動作環境
+
+.NET Core コンソール アプリケーションです。Windows、Mac、Linux で動作します。
+
+動作させるためには、.NET Core SDK がインストールされている必要があります。Visual Studio 2017 RC の最新版をインストールすれば、.NET Core SDK は自動的にインストールされます。また、Visual Studio 2017 RC をインストールしたくない場合や他のOSの場合は、Microsoftの[.NET Core installation guide](https://www.microsoft.com/net/core#windowscmd)のページにインストールの方法がありますのでそちらを参考にしてください。ただし、.NET Core installation guide の方の SDK は、project.json版なので、3月7日に .NET Core SDK の RTM 版が出るまでは、[.NET Core SDK 1.0 rc4 build 004771](https://github.com/dotnet/core/blob/master/release-notes/rc4-download.md) の方もインストールしてください。
+
+### インストール及び実行
+
+GitHub から以下のコマンドでソースをダウンロードします。
+```
+git clone https://github.com/timej/NAreaCode
+```
+NAreaCode のディレクトリーに移動します。
+```
+cd NAreaCode/NAreaCode
+```
+次のコマンドで必要なパッケージを読み込んで実行します。
+```
+dotnet restore
+dotnet run --help 
+```
+次のコマンドで発行できます。
+```
+dotnet publish
+```
+発行したディレクトリに移動します。何も指定しなければ、以下のコマンドで発行したディレクトリに移動します。
+```
+//Windowsの場合
+cd bin\Debug\netcoreapp1.1\publish\
+//Mac、Linuxの場合
+cd bin/Debug/netcoreapp1.1/publish/
+```
+今回は、アセンブリ名をnacodeにしているので、次のコマンドで実行します。
+```
+dotnet nacode.dll --help
+```
 
 ### コマンド
+時間ができたら、もう少しコマンドを追加する予定です。
 - new 履歴付市区町村コードデータベースを新規作成します。処理に1時間ぐらいかかるし、統計LOD のサイトに負荷をかけるのでできるだけ使わない方がいいです。
 - update 統計LODのデータが更新されたときに履歴付市区町村コードデータベースを更新します。
+- list 市町村コードの一覧を表示します。
 - test Municipality Map Maker ウェブ版からダウンロードしたテストデータとのチェックをしています。
 
 ### データ
