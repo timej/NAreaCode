@@ -71,25 +71,20 @@ namespace NAreaCode.Models
         }
 
         //date日現在の市町村数
-        public string GetNumber(DateTime date)
-        {
-            var areaLods = AreaCodeList.Where(x => x.施行年月日 <= date && x.廃止年月日 > date && x.所属 != 99);
+        public IEnumerable<(自治体種別 種別, int 計)> GetNumberOfMunicipalities(DateTime date) =>
+            AreaCodeList
+                .Where(x => x.施行年月日 <= date && x.廃止年月日 > date && x.所属 != 99)
+                .GroupBy(x => x.種別)
+                .Select(x => (種別: x.Key, 計: x.Count()))
+                .OrderBy(x => x.種別);
 
-            int city = 0;
-            int town = 0;
-            int villege = 0;
-
-            foreach (var area in areaLods)
-            {
-                if (area.名称.EndsWith("市"))
-                    city++;
-                if (area.名称.EndsWith("町"))
-                    town++;
-                if (area.名称.EndsWith("村"))
-                    villege++;
-            }
-            return $"市 {city}、町 {town}、村 {villege}";
-        }
+        //date日現在の市町村数
+        public IEnumerable<(自治体種別 種別, int 計)> GetNumberOfMunicipalities(int pref, DateTime date) =>
+            AreaCodeList
+                .Where(x => x.Id / 1000 == pref && x.施行年月日 <= date && x.廃止年月日 > date && x.所属 != 99)
+                .GroupBy(x => x.種別)
+                .Select(x => (種別: x.Key, 計: x.Count()))
+                .OrderBy(x => x.種別);
 
         //市町村コードの対応を計算するプログラム
         //areaCode: 市町村コード 

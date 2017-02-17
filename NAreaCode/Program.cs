@@ -90,6 +90,45 @@ namespace NAreaCode
                 });
             });
 
+            app.Command("number", (command) =>
+            {
+                command.Description = "市町村数を表示";
+                command.HelpOption("-?|-h|--help");
+                var pref = command.Option(
+                   "-p |--pref <都道府県コード>",
+                    "都道府県コードは、1から47までの数字で入力",
+                    CommandOptionType.SingleValue);
+                var date = command.Option(
+                    "-d |--date <日付>",
+                    "その日付の市区町村の一覧を表示。指定がない場合は今日。",
+                    CommandOptionType.SingleValue);
+                command.OnExecute(() =>
+                {
+                    DateTime dt;
+                    if (date.HasValue())
+                    {
+                        if (!DateTime.TryParse(date.Value(), out dt))
+                        {
+                            Console.WriteLine("日付を正しい形式で入力してください。");
+                            return 0;
+                        }
+                    }
+                    else
+                        dt = DateTime.Today;
+                    if (pref.HasValue())
+                    {
+                        if (int.TryParse(pref.Value(), out int r))
+                            List(r, dt);
+                        else
+                            Console.WriteLine("-pオプションは、都道府県をコード1～47で指定してください");
+                    }
+                    else
+                        List(dt);
+                    Number(dt);
+                    return 0;
+                });
+            });
+
             app.Command("test", (command) =>
             {
                 command.Description = "MMMウェブ版の対応表とのチェック";
@@ -137,6 +176,26 @@ namespace NAreaCode
             }
             else
                 Console.WriteLine("-pオプションは、都道府県をコード1～47で指定してください");
+        }
+
+        private static void Number(DateTime dt)
+        {
+            var areaCodeClass = new NAreaCodeClass(_dataPath);
+            var number = areaCodeClass.GetNumberOfMunicipalities(dt);
+            foreach(var num in number)
+            {
+                Console.WriteLine($"{num.種別}\t{num.計}");
+            }
+        }
+
+        private static void Number(int pref, DateTime dt)
+        {
+            var areaCodeClass = new NAreaCodeClass(_dataPath);
+            var number = areaCodeClass.GetNumberOfMunicipalities(pref, dt);
+            foreach (var num in number)
+            {
+                Console.WriteLine($"{num.種別}\t{num.計}");
+            }
         }
 
 

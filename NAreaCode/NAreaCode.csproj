@@ -33,8 +33,5 @@
     <Content Update="data\ChangeEventList.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Update="Models\NAreaCodeModel.d.ts">
-      <DependentUpon>NAreaCodeModel.cs</DependentUpon>
-    </None>
   </ItemGroup>
 </Project>
