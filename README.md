@@ -7,7 +7,7 @@
 
 .NET Core コンソール アプリケーションです。Windows、Mac、Linux で動作します。
 
-動作させるためには、.NET Core SDK がインストールされている必要があります。Visual Studio 2017 RC の最新版をインストールすれば、.NET Core SDK は自動的にインストールされます。また、Visual Studio 2017 RC をインストールしたくない場合や他のOSの場合は、Microsoftの[.NET Core installation guide](https://www.microsoft.com/net/core#windowscmd)のページにインストールの方法がありますのでそちらを参考にしてください。ただし、.NET Core installation guide の方の SDK は、project.json版なので、3月7日に .NET Core SDK の RTM 版が出るまでは、[.NET Core SDK 1.0 rc4 build 004771](https://github.com/dotnet/core/blob/master/release-notes/rc4-download.md) の方もインストールしてください。
+動作させるためには、.NET Core がインストールされている必要があります。Visual Studio 2017 をインストールすれば、.NET Core は自動的にインストールされます。また、Visual Studio 2017 をインストールしたくない場合や他のOSの場合は、Microsoftの[.NET Core installation guide](https://www.microsoft.com/net/core#windowscmd)のページに .NET Core のインストールの方法の説明がありますのでそちを参考にしてください。.NET Core のインストールは数分でできます。
 
 ### インストール及び実行
 

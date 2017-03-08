@@ -54,8 +54,8 @@ namespace NAreaCode.Models
 
         public IEnumerable<(int id, string 名称)> GetAreaCode(int pref, DateTime date) => AreaCodeList
             .Where(x => x.Id / 1000 == pref && x.施行年月日 <= date && x.廃止年月日 > date && x.所属 != 99)
-            .OrderBy(x => x.Id)
-            .Select(x => (id: x.Id, 名称: x.名称));
+            .Select(x => (id: x.Id, 名称: x.名称))
+            .OrderBy(x => x.id);
 
         public List<StandardAreaCode> GetStandardAreaCode(int pref, DateTime date, bool includeWard)
         {
